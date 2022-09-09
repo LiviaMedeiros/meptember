@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!-- 엘샤#2343 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>#Reine2ndMEPtember</title>
+<meta name="format-detection" content="email=no,telephone=no" />
+<meta name="author" content="LiviaMedeiros" />
+<meta name="description" content="MEPtember frame utility" />
+<meta property="og:image" content="https://mep.orange-pla.net/img/frame.png" />
+<meta property="og:image:alt" content="#Reine2ndMEPtember" />
+<meta property="og:type" content="object" />
+<meta property="og:title" content="#Reine2ndMEPtember" />
+<meta property="og:url" content="https://mep.orange-pla.net" />
+<meta name="twitter:image:src" content="https://mep.orange-pla.net/img/frame.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="#Reine2ndMEPtember" />
+<meta name="theme-color" content="#003388" />
+<link rel="canonical" href="https://mep.orange-pla.net/" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous" />
+<link href="https://cdn.jsdelivr.net/npm/uppy@3.0.1/dist/uppy.min.css" rel="stylesheet" integrity="sha384-wEEbq8ve4mqDXCmpHZ55xSJBj8oOVou2GLCjatypzFqxCcE4C5OAOvOohuepfBLz" />
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/uppy@3.0.1/dist/uppy.min.js" integrity="sha384-IRNXEBAro1G7m6x2r/vNGBUyhwj20gReaZXgh7kGBuoeFH91QkCp97AqiXQ3BOao" crossorigin="anonymous"></script>
+<script type="module">
+/*! For Pavolia Reine with love © 2022 LiviaMedeiros */
+let MEP = new URL('img/frame.png', location.origin);
+const I = document.getElementById.bind(document);
+const filehandler = async (file, name = null) => {
+	if (!file) return;
+	clearCanvas();
+	await drawBlob(file);
+	await drawBlob();
+	return save(name ?? file.name.replace(/\.[^.]*$/, ''));
+}
+const saveAs = (blob, name = null, timeout = 99922) => {
+	const a = Object.assign(document.createElement('a'), {
+		download: name ?? blob.name ?? crypto.randomUUID(),
+		rel: 'noopener',
+		href: URL.createObjectURL(blob)
+	});
+	setTimeout(() => URL.revokeObjectURL(a.href), timeout);
+	return a.dispatchEvent(new MouseEvent('click'));
+};
+const save = (filename = '', canvas = I('cvs')) => {
+	const type = document.querySelector('.imgtype:checked').value;
+	canvas.toBlob(blob => {
+		saveAs(blob, `MEPtember2_${filename}.${type}`);
+		const img = document.createElement('img');
+		img.src = URL.createObjectURL(blob);
+		img.classList.add('result');
+		I('results').appendChild(img);
+	}, {
+		png: 'image/png',
+		jpg: 'image/jpeg',
+		webp: 'image/webp',
+	}[type], 1);
+}
+const clearCanvas = (canvas = I('cvs'), context = null) =>
+	(context ?? canvas.getContext('2d')).clearRect(0, 0, canvas.width, canvas.height);
+const drawBlob = async (blob = MEP, ctx = I('cvs').getContext('2d')) =>
+	new Promise((resolve, reject) => {
+		const img = document.createElement('img');
+		img.onload = () => void resolve(ctx.drawImage(img, 0, 0, 900, 900));
+		img.onerror = reject;
+		img.src = URL.createObjectURL(blob);
+	});
+const getRemote = async (type, value) =>
+	fetch(new URL('api/avatar.php', location.origin), {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ type, value })
+	})
+		.then(r => r.blob())
+		.catch(console.error);
+const normalize = {
+	twitter: value => {
+		value = value.replace(/^.*twitter.com\//, '');
+		value = value.replace(/^@/, '');
+		value = value.replace(/[?#].*$/, '');
+		return value;
+	},
+	youtube: value => {
+		value = value.replace(/^.*\/channel\//, '');
+		value = value.replace(/[?#].*$/, '');
+		return value;
+	},
+	discord: value => {
+		value = value.replace(/[^0-9]/g, '');
+		return value;
+	},
+}
+const main = async () => {
+	[...document.getElementsByClassName('import')].forEach(el =>
+		el.addEventListener('submit', async e => {
+			e.preventDefault();
+			const { target: { txt: { value }, dataset: { type }, btn } } = e;
+			const normalized = normalize[type](value);
+			if (!normalized) return;
+			btn.disabled = true;
+			const blob = await getRemote(type, normalized);
+			return void await filehandler(blob, normalized)
+				.finally(() => btn.disabled = false);
+		})
+	);
+	const uppy = new Uppy.Uppy({
+		restrictions: {
+			maxNumberOfFiles: 1,
+			maxFileSize: 16 * 1024 * 1024,
+			allowedFileTypes: ['image/*']
+		}
+	})
+		.use(Uppy.Dashboard, {
+			inline: true,
+			hideCancelButton: true,
+			hidePauseResumeButton: true,
+			hideRetryButton: true,
+			hideUploadButton: true,
+			showSelectedFiles: false,
+			autoOpenFileEditor: true,
+			disableInformer: true,
+			disableThumbnailGenerator: true,
+			theme: 'dark',
+			target: '#drag-drop-area'
+		})
+		.use(Uppy.ImageEditor, {
+			target: Uppy.Dashboard,
+			actions: {
+				cropWidescreen: false,
+				cropWidescreenVertical: false
+			}
+		})
+		.on('file-editor:complete', () => uppy.upload())
+		.on('complete', async ({ successful: [{ data, name }] }) => {
+			await filehandler(data, name.replace(/\.[^.]*$/, ''));
+			uppy.cancelAll();
+		});
+	MEP = await fetch(MEP)
+		.then(r => r.blob())
+		.catch(console.error);
+	await drawBlob();
+};
+
+document.addEventListener('DOMContentLoaded', main, { once: true });
+</script>
+<style>
+@keyframes halu {
+	from {
+		filter: hue-rotate(0deg);
+	}
+	to {
+		filter: hue-rotate(360deg)
+	}
+}
+@font-face {
+	font-family: lilitaone;
+	src: url('/font/LilitaOne-Regular.ttf');
+}
+html, body {
+	background-color: #999;
+	cursor: grabbing; /* TONJOK */
+}
+:root {
+	color-scheme: dark;
+	--bs-body-font-family: lilitaone;
+}
+#mep {
+	animation: halu 99s infinite linear;
+}
+polygon, line {
+	fill: none;
+	stroke-width: 8px;
+	stroke-linecap: butt;
+	stroke-linejoin: round;
+}
+#cvs {
+	display: none;
+	border: dashed 1px red;
+}
+.result {
+	width: 180px;
+	height: 180px;
+	border-radius: 50%;
+	margin: 4px;
+	display: inline-block;
+	vertical-align: top;
+	background: repeating-conic-gradient(rgba(0, 0, 0, .5) 0% 25%, rgba(255, 255, 255, .5) 0% 50%) 50% / 16px 16px;
+}
+.uppy-DashboardContent-back {
+	display: none;
+}
+.uppy-ImageCropper .cropper-view-box {
+	background: repeating-conic-gradient(rgba(0, 0, 0, .5) 0% 25%, rgba(255, 255, 255, .5) 0% 50%) 50% / 16px 16px;
+}
+</style>
+</head>
+<body>
+<nav id="navbar_top" class="navbar navbar-expand-md navbar-dark sticky-top bg-dark mb-2">
+	<div class="container-fluid">
+		<a href="https://twitter.com/hashtag/Reine2ndMEPtember">
+			<svg height="80" width="200" viewBox="0 0 400 160" id="mep">
+				<defs>
+					<linearGradient id="GR" x1="50%" y1="0%" x2="50%" y2="120%" gradientUnits="userSpaceOnUse">
+						<stop offset="5%" stop-color="#038" />
+						<stop offset="95%" stop-color="#7ce" />
+					</linearGradient>
+					<linearGradient id="DS" x1="50%" y1="0%" x2="50%" y2="100%" gradientUnits="userSpaceOnUse">
+						<stop offset="5%" stop-color="#5a7" />
+						<stop offset="95%" stop-color="#39c" />
+					</linearGradient>
+				</defs>
+				<g stroke="url(#GR)">
+					<g>
+						<polygon points="75,35 30,125 130,125" class="triangle" id="M" />
+						<polygon points="135,80 225,30 225,130" class="triangle" id="E" />
+						<polygon points="310,30 260,65 260,95 310,130 360,95 360,65" class="hexagon" id="P" />
+					</g>
+					<g>
+						<line x1="75" y1="105" x2="75" y2="145" class="vert dash" />
+						<line x1="205" y1="80" x2="245" y2="80" class="hori dash" />
+						<line x1="310" y1="15" x2="310" y2="55" class="vert dash" />
+						<line x1="340" y1="80" x2="380" y2="80" class="hori dash" />
+					</g>
+				</g>
+			</svg>
+		</a>
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar_col" aria-controls="navbar_col" aria-expanded="false" aria-label="Toggle navbar">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse" id="navbar_col">
+			<div class="btn-group-vertical m-2" role="group">
+				<input type="radio" class="imgtype btn-check form-check-input" name="imgtype" id="imgtype_png" value="png" title="Export as PNG" checked>
+				<label class="btn btn-outline-secondary" for="imgtype_png">PNG</svg></label>
+				<input type="radio" class="imgtype btn-check form-check-input" name="imgtype" id="imgtype_jpeg" value="jpg" title="Export as JPG">
+				<label class="btn btn-outline-secondary" for="imgtype_jpeg">JPG</label>
+				<input type="radio" class="imgtype btn-check form-check-input" name="imgtype" id="imgtype_webp" value="webp" title="Export as WEBP">
+				<label class="btn btn-outline-secondary" for="imgtype_webp">WEBP</label>
+			</div>
+			<div class="w-100">
+				<form class="import mb-1 input-group" data-type="twitter" title="Import from Twitter">
+					<button type="submit" class="btn btn-primary" name="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter" viewBox="0 0 16 16"><path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/></svg></button>
+					<input type="text" name="txt" class="form-control" placeholder="example: pavoliareine or @pavoliareine or https://twitter.com/pavoliareine" />
+				</form>
+				<form class="import mb-1 input-group" data-type="youtube" title="Import from YouTube">
+					<button type="submit" class="btn btn-primary" name="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-youtube" viewBox="0 0 16 16"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.007 2.007 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.007 2.007 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31.4 31.4 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.007 2.007 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A99.788 99.788 0 0 1 7.858 2h.193zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/></svg></button>
+					<input type="text" name="txt" class="form-control" placeholder="example: UChgTyjG-pdNvxxhdsXfHQ5Q or https://youtube.com/channel/UChgTyjG-pdNvxxhdsXfHQ5Q" />
+				</form>
+				<form class="import mb-1 input-group" data-type="discord" title="Import from Discord">
+					<button type="submit" class="btn btn-primary" name="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord" viewBox="0 0 16 16"><path d="M13.545 2.907a13.227 13.227 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.19 12.19 0 0 0-3.658 0 8.258 8.258 0 0 0-.412-.833.051.051 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.041.041 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032c.001.014.01.028.021.037a13.276 13.276 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019c.308-.42.582-.863.818-1.329a.05.05 0 0 0-.01-.059.051.051 0 0 0-.018-.011 8.875 8.875 0 0 1-1.248-.595.05.05 0 0 1-.02-.066.051.051 0 0 1 .015-.019c.084-.063.168-.129.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.052.052 0 0 1 .053.007c.08.066.164.132.248.195a.051.051 0 0 1-.004.085 8.254 8.254 0 0 1-1.249.594.05.05 0 0 0-.03.03.052.052 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.235 13.235 0 0 0 4.001-2.02.049.049 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.034.034 0 0 0-.02-.019Zm-8.198 7.307c-.789 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612Zm5.316 0c-.788 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612Z"/></svg></button>
+					<input type="text" name="txt" class="form-control" placeholder="example: 320183411954286593" />
+				</form>
+			</form>
+		</div>
+	</div>
+</nav>
+<div id="content" class="container text-center">
+	<div id="results" class="mb-2"></div>
+	<div id="drag-drop-area" class="mb-2 d-inline-block"></div>
+</div>
+<canvas id="cvs" width="900" height="900"></canvas>
+</body>
+</html>

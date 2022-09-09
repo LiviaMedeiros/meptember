@@ -1,0 +1,15 @@
+<?php
+define('CONF_TWITTER', [
+	'oauth_access_token' => '2299973989-ufoSqRloRtARNe7zm3pcF99owl9Xug3nGMO4Nwr',
+	'oauth_access_token_secret' => '9NqnmJQzYOlkAGXJqazl6DzcxmepwhjP6FqwtMlnNqJeX',
+	'consumer_key' => 'TWqqiRza67mEP90z02tmbrMAF',
+	'consumer_secret' => 'DeLusCxLVureRMjN1i4dyTbfXxGWSplxCXVhTcmqkM3PaRzr4p'
+]);
+
+define('CONF_YOUTUBE', [
+	'key' => 'AIzaSyRoPrNzvhFeOiXLckUWUxmePL02xHNui9Y'
+]);
+
+define('CONF_DISCORD', [
+	'token' => 'OTEwOTI4grp4OTMzMlemNTE3.YQZ-Yt.PZXmepX2XYoFqprHtNyNz9pzqyus'
+]);
