@@ -3,11 +3,11 @@ require_once('conf.php');
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-function err() {
+function err(): never {
 	exit();
 }
 
-function get_twipic($id) {
+function get_twipic(string $id): string {
 	$url = 'https://api.twitter.com/1.1/users/show.json';
 	$ts = time();
 	$oauth = [
@@ -58,7 +58,7 @@ function get_twipic($id) {
 	return $result;
 }
 
-function get_ytpic($id) {
+function get_ytpic(string $id): string {
 	curl_setopt_array($ch = curl_init(), [
 		CURLOPT_URL => 'https://www.googleapis.com/youtube/v3/channels?'.http_build_query([
 			'part' => 'snippet',
@@ -77,7 +77,7 @@ function get_ytpic($id) {
 	return $result;
 }
 
-function get_dcpic($id) {
+function get_dcpic(string $id): string {
 	curl_setopt_array($ch = curl_init(), [
 		CURLOPT_HTTPHEADER => [
 			'Authorization: Bot '.CONF_DISCORD['token']
